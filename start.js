@@ -1,9 +1,9 @@
 var domainSocket = '/tmp/humix-sense-blinking';
 var sensorName   = 'humix-sense-blinking';
-var natChannel   = 'humix-sense-blinking';
-var workDir      = '/home/yhwang/humix/humix-sense/controls/humix-sense-blinking';
-var pythonSCript = 'blinking.py';
-var GPIOPin      = 4;
+var natChannel   = 'humix-sense-eyelid';
+var workDir      = '/home/pi/humix/humix-sense/controls/humix-sense-blinking';
+var pythonScript = workDir + '/blinking.py';
+var GPIOPin      = 26;
 var processing   = false;
 var isClosed     = true;
 
@@ -48,28 +48,31 @@ try {
 
 var psOpt = {
     'cwd' : workDir,
-    'stdio' : ['inherit', 'ignore', 'ignore']
-    //'stdio' : ['inherit', 'ignore', 'inherit']
+    'stdio' : 'inherit'
+//    'stdio' : ['inherit', 'ignore', 'ignore']
+//    'stdio' : ['inherit', 'inherit', 'inherit']
 };
 //receive and process commands
 nats.subscribe(natChannel, function(msg) {
     console.error('Received a message: ' + msg);
     processing = true;
+    var jsonObj = JSON.parse(msg);
+    var action = jsonObj.action;
     try {
-        switch (msg) {
+        switch (action) {
             case('blink'):
-                ps.execSync('sudo python ' + pythonSCript + ' ' + GPIOPin + ' blink 2', psOpt);
+                ps.execSync('sudo python ' + pythonScript + ' ' + GPIOPin + ' blink 2', { 'cwd' : workDir, 'stdio': 'inherit'} );
                 break;
             case('open'):
-                ps.execSync('sudo python ' + pythonSCript + ' ' + GPIOPin + ' open', psOpt);
+                ps.execSync('sudo python ' + pythonScript + ' ' + GPIOPin + ' open', { 'cwd' : workDir, 'stdio': 'inherit'} );
                 isClosed = false;
                 break;
             case('close'):
-                ps.execSync('sudo python ' + pythonSCript + ' ' + GPIOPin + ' close', psOpt);
+                ps.execSync('sudo python ' + pythonScript + ' ' + GPIOPin + ' close', { 'cwd' : workDir, 'stdio': 'inherit'} );
                 isClosed = true;
                 break;
             case('half'):
-                ps.execSync('sudo python ' + pythonSCript + ' ' + GPIOPin + ' half', psOpt);
+                ps.execSync('sudo python ' + pythonScript + ' ' + GPIOPin + ' half', { 'cwd' : workDir, 'stdio': 'inherit'});
                 isClosed = true;
                 break;
             default:
@@ -87,24 +90,25 @@ function getRandomInt(min, max) {
 }
 
 function randomBlink() {
-    var nextRandom = getRandomInt(10, 15);
+    var nextRandom = getRandomInt(8, 12);
     if ( processing || isClosed  ) {
         console.error('skipped random blink');
     } else {
         try {
-            ps.execSync('sudo python ' + pythonSCript + ' ' + GPIOPin + ' blink 2', psOpt);
+            ps.execSync('sudo python ' + pythonScript + ' ' + GPIOPin + ' blink 2', { 'cwd' : workDir, 'stdio': 'inherit'});
         } catch (e) {
-            console.error('random blink failed');
+            console.error('random blink failed' + e);
         }
     }
     setTimeout(randomBlink, nextRandom*1000);
 }
 
-//ok lets open the eyes and start random blink
+//ok be sure to close the eye and wait for the signal to open
 try {
-    ps.execSync('sudo python ' + pythonSCript + ' ' + GPIOPin + ' open', psOpt);
-    isClosed = false;
-    setTimeout(randomBlink, getRandomInt(10, 15) * 1000);
+    ps.execSync('sudo python ' + pythonScript + ' ' + GPIOPin + ' close', { 'cwd' : workDir, 'stdio': 'inherit'});
+    isClosed = true;
+    //still enable the random blink
+    setTimeout(randomBlink, getRandomInt(8, 12) * 1000);
 } catch (e) {
-    console.error('initial open failed');
+    console.error('initial open failed' + e);
 }

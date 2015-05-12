@@ -1,53 +1,53 @@
+import time, random, sys
 import RPi.GPIO as GPIO
-import time
-import sys
- 
+
+operation = "blink"
+speed = 1
+ang0 = 8.8
+ang90 = 7.5
+ang180 = 4.5 
+initDC = ang0
+needCycle = False
+
+#check operation command first
+argnum = len(sys.argv)
+if argnum > 4 or argnum < 3:
+    print "usage : %s GPIO_PIN 'blink|half|close|open'" %(sys.argv[0])
+    sys.exit(-1)
+
+GPIONum = int(sys.argv[1])
+operation = sys.argv[2]
+
+if operation == "blink" or operation == "helf":
+    if argnum == 4:
+        speed = int(sys.argv[3])
+
+if speed > 3:
+    speed = 3
+    
+if operation == "close":
+    initDC = ang180
+elif operation == "half":
+    initDC = ang90
+elif operation == "open":
+    initDC = ang0
+elif operation == "blink":
+    needCycle = True
+    
 GPIO.setmode(GPIO.BCM)
- 
-coil_A_1_pin = 17
-coil_A_2_pin = 22
-coil_B_1_pin = 23
-coil_B_2_pin = 24
- 
-GPIO.setup(coil_A_1_pin, GPIO.OUT)
-GPIO.setup(coil_A_2_pin, GPIO.OUT)
-GPIO.setup(coil_B_1_pin, GPIO.OUT)
-GPIO.setup(coil_B_2_pin, GPIO.OUT)
- 
- 
-def forward(delay, steps):  
-  for i in range(0, steps):
-    setStep(1, 0, 1, 0)
-    time.sleep(delay)
-    setStep(0, 1, 1, 0)
-    time.sleep(delay)
-    setStep(0, 1, 0, 1)
-    time.sleep(delay)
-    setStep(1, 0, 0, 1)
-    time.sleep(delay)
- 
-def backwards(delay, steps):  
-  for i in range(0, steps):
-    setStep(1, 0, 0, 1)
-    time.sleep(delay)
-    setStep(0, 1, 0, 1)
-    time.sleep(delay)
-    setStep(0, 1, 1, 0)
-    time.sleep(delay)
-    setStep(1, 0, 1, 0)
-    time.sleep(delay)
- 
-  
-def setStep(w1, w2, w3, w4):
-  GPIO.output(coil_A_1_pin, w1)
-  GPIO.output(coil_A_2_pin, w2)
-  GPIO.output(coil_B_1_pin, w3)
-  GPIO.output(coil_B_2_pin, w4)
- 
+GPIO.setup(GPIONum, GPIO.OUT)
+p = GPIO.PWM(GPIONum, 50)  #frequency=50Hz
 try:
-  steps = int(sys.argv[1])
-  delay = 0.003
-  forward(delay, steps)
-  GPIO.cleanup()
-except:
-  GPIO.cleanup()
+    p.start(initDC)
+    time.sleep(0.75)
+    if needCycle == True:
+        p.ChangeDutyCycle(ang180)
+        time.sleep( (float)(speed)/10 + 0.2 )
+        p.ChangeDutyCycle(ang0)
+        time.sleep(1)
+
+    p.stop()
+    GPIO.cleanup()
+except KeyboardInterrupt:
+    p.stop()
+    GPIO.cleanup()
