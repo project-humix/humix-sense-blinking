@@ -1,6 +1,6 @@
 var domainSocket = '/tmp/humix-sense-blinking';
 var sensorName   = 'humix-sense-blinking';
-var natChannel   = 'humix-sense-eyelid';
+var natChannel   = 'humix.sense.eyelid.commands';
 var workDir      = '/home/pi/humix/humix-sense/controls/humix-sense-blinking';
 var pythonScript = workDir + '/blinking.py';
 var GPIOPin      = 26;
