@@ -3,9 +3,9 @@ import RPi.GPIO as GPIO
 
 operation = "blink"
 speed = 1
-ang0 = 2.6
+ang0 = 8.8
 ang90 = 7.5
-ang180 = 8.8
+ang180 = 4.5 
 initDC = ang0
 needCycle = False
 

@@ -1,7 +1,7 @@
 var domainSocket = '/tmp/humix-sense-blinking';
 var sensorName   = 'humix-sense-blinking';
-var natChannel   = 'humix.sense.eyelid.commands';
-var workDir      = '/home/pi/humix/humix-sense/controls/humix-sense-blinking';
+var natChannel   = 'humix.sense.eyelid.command';
+var workDir      = '/home/liuch/workspace/humix/humix-sense/controls/humix-sense-blinking';
 var pythonScript = workDir + '/blinking.py';
 var GPIOPin      = 26;
 var processing   = false;
@@ -52,6 +52,14 @@ var psOpt = {
 //    'stdio' : ['inherit', 'ignore', 'ignore']
 //    'stdio' : ['inherit', 'inherit', 'inherit']
 };
+
+nats.subscribe('humix.sense.eyelid.status.ping', function(request,replyto){
+
+    nats.publish(replyto, 'humix.sense.eyelid.status.pong');
+    
+})
+
+
 //receive and process commands
 nats.subscribe(natChannel, function(msg) {
     console.error('Received a message: ' + msg);
@@ -92,7 +100,7 @@ function getRandomInt(min, max) {
 function randomBlink() {
     var nextRandom = getRandomInt(8, 12);
     if ( processing || isClosed  ) {
-        console.error('skipped random blink');
+        console.log('skipped random blink');
     } else {
         try {
             ps.execSync('sudo python ' + pythonScript + ' ' + GPIOPin + ' blink 2', { 'cwd' : workDir, 'stdio': 'inherit'});
